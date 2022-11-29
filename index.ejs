@@ -119,7 +119,21 @@
 	<div class=detail>
 		<%if (issues.length > 0) { %>
 		<h2>Detail of the Detected <%= vulnerabilityPluralPhrase %></h2>
-		<table>
+        <div class="tab">
+          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
+          <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
+          <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
+          <button class="issueType" onclick="filterIssueType(event, 'BUG')">BUG</button>
+          <button class="issueType" onclick="filterIssueType(event, 'SECURITY_HOTSPOT')">SECURITY_HOTSPOT</button>
+        </div>
+        <div class="tab">
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'ALL')">ALL</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'BLOCKER')">BLOCKER</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'CRITICAL')">CRITICAL</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MAJOR')">MAJOR</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MINOR')">MINOR</button>
+        </div>
+        <table id="issuesTable">
 			<thead>
 				<tr>
 					<th>Rule</th>
@@ -180,6 +194,107 @@
 	</div>
 
 	<%if (issues.length > 0) { %>
+    <script>
+        document.getElementsByClassName("issueType")[0].className += " active";
+        document.getElementsByClassName("issueSeverity")[0].className += " active";
+
+        function filterIssueType(evt, type) {
+            tablinks = document.getElementsByClassName("issueSeverity");
+            issueSeveritySelected = "ALL";
+            for (i = 0; i < tablinks.length; i++) {
+              if (tablinks[i].className.indexOf(" active") > -1) {
+                  switch(i) {
+                      case 0:
+                        issueSeveritySelected = "ALL";
+                        break;
+                      case 1:
+                        issueSeveritySelected = "BLOCKER";
+                        break;
+                      case 2:
+                        issueSeveritySelected = "CRITICAL";
+                        break;
+                      case 3:
+                        issueSeveritySelected = "MAJOR";
+                        break;
+                      case 4:
+                        issueSeveritySelected = "MINOR";
+                        break;
+                  }
+                  break;
+              }
+            }
+
+            var table, tr, td, i, txtValue;
+              table = document.getElementById("issuesTable");
+              tr = table.getElementsByTagName("tr");
+              for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[7];
+                td2 = tr[i].getElementsByTagName("td")[1];
+                if (td) {
+                  txtValue = td.textContent || td.innerText;
+                  isseueSeverity = td2.textContent || td2.innerText;
+                  if ((type == "ALL" || txtValue == type) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
+                    tr[i].style.display = "";
+                  } else {
+                    tr[i].style.display = "none";
+                  }
+                }
+              }
+          tablinks = document.getElementsByClassName("issueType");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+        }
+        function filterIssueSeverity(evt, severity) {
+            tablinks = document.getElementsByClassName("issueType");
+            issueTypeSelected = "ALL";
+            for (i = 0; i < tablinks.length; i++) {
+              if (tablinks[i].className.indexOf(" active") > -1) {
+                  switch(i) {
+                      case 0:
+                        issueTypeSelected = "ALL";
+                        break;
+                      case 1:
+                        issueTypeSelected = "VULNERABILITY";
+                        break;
+                      case 2:
+                        issueTypeSelected = "CODE_SMELL";
+                        break;
+                      case 3:
+                        issueTypeSelected = "BUG";
+                        break;
+                      case 4:
+                        issueTypeSelected = "SECURITY_HOTSPOT";
+                        break;
+                  }
+                  break;
+              }
+            }
+
+            var table, tr, td, i, txtValue;
+              table = document.getElementById("issuesTable");
+              tr = table.getElementsByTagName("tr");
+              for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[1];
+                td2 = tr[i].getElementsByTagName("td")[7];
+                if (td) {
+                  txtValue = td.textContent || td.innerText;
+                  isseueType = td2.textContent || td2.innerText;
+                  if ((severity == "ALL" || txtValue == severity) && (issueTypeSelected == "ALL" || issueTypeSelected == isseueType)) {
+                    tr[i].style.display = "";
+                  } else {
+                    tr[i].style.display = "none";
+                  }
+                }
+              }
+          tablinks = document.getElementsByClassName("issueSeverity");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+        }
+    </script>
 
 	<script>
 		var canvas = document.getElementById("vulnerabilitiesPieChart");
