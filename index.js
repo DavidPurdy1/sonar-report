@@ -394,7 +394,7 @@ const generateReport = async options => {
       do {
         try {
           const response = await got(
-            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&statuses=${HOTSPOT_STATUSES}`,
+            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&status=${HOTSPOT_STATUSES}`,
             {
               agent,
               headers,
