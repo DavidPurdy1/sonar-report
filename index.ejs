@@ -213,27 +213,6 @@
             } else {
                 newCodeElement.style.display = "none";
             }
-
-            issueSeveritySelected = selectedIssueSeverity();
-            issueTypeSelected = selectedIssueType();
-            var table, tr, td, i, txtValue;
-              table = document.getElementById("issuesTable");
-              tr = table.getElementsByTagName("tr");
-              for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[8];
-                td2 = tr[i].getElementsByTagName("td")[1];
-                td3 = tr[i].getElementsByTagName("td")[7];
-                if (td) {
-                  issueType = td.textContent || td.innerText;
-                  isseueSeverity = td2.textContent || td2.innerText;
-                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
-                  if ((type != "NEW" || isseueSinceLeakPeriod != "") && (issueTypeSelected == "ALL" || issueTypeSelected == issueType) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
-                    tr[i].style.display = "";
-                  } else {
-                    tr[i].style.display = "none";
-                  }
-                }
-              }
                     
           tablinks = document.getElementsByClassName("codeType");
           if (type == "NEW"){
@@ -243,6 +222,7 @@
               tablinks[0].className = tablinks[0].className.replace(" active", "");
               tablinks[1].className += " active";
           }
+          filterTable();
         }
 
         function selectedCodeType() {
@@ -252,10 +232,10 @@
               if (tablinks[i].className.indexOf(" active") > -1) {
                   switch(i) {
                       case 0:
-                        issueSeveritySelected = "NEW";
+                        codeTypeSelected = "NEW";
                         break;
                       case 1:
-                        issueSeveritySelected = "ALL";
+                        codeTypeSelected = "ALL";
                         break;
                   }
                   break;
@@ -321,7 +301,25 @@
         }
 
         function filterIssueType(evt, type) {
+          tablinks = document.getElementsByClassName("issueType");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+          filterTable();
+        }
+        function filterIssueSeverity(evt, severity) {
+          tablinks = document.getElementsByClassName("issueSeverity");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+          filterTable();
+        }
+
+        function filterTable() {
             issueSeveritySelected = selectedIssueSeverity();
+            issueTypeSelected = selectedIssueType();
             codeTypeSelected = selectedCodeType();
             var table, tr, td, i, txtValue;
               table = document.getElementById("issuesTable");
@@ -331,48 +329,16 @@
                 td2 = tr[i].getElementsByTagName("td")[1];
                 td3 = tr[i].getElementsByTagName("td")[7];
                 if (td) {
-                  txtValue = td.textContent || td.innerText;
+                  issueType = td.textContent || td.innerText;
                   isseueSeverity = td2.textContent || td2.innerText;
                   isseueSinceLeakPeriod = td3.textContent || td3.innerText;
-                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (type == "ALL" || type == txtValue) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
+                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (issueTypeSelected == "ALL" || issueTypeSelected == issueType) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
                     tr[i].style.display = "";
                   } else {
                     tr[i].style.display = "none";
                   }
                 }
               }
-          tablinks = document.getElementsByClassName("issueType");
-          for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-          }
-          evt.currentTarget.className += " active";
-        }
-        function filterIssueSeverity(evt, severity) {
-            issueTypeSelected = selectedIssueType();
-            codeTypeSelected = selectedCodeType();
-            var table, tr, td, i, txtValue;
-              table = document.getElementById("issuesTable");
-              tr = table.getElementsByTagName("tr");
-              for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[1];
-                td2 = tr[i].getElementsByTagName("td")[8];
-                td3 = tr[i].getElementsByTagName("td")[7];
-                if (td) {
-                  txtValue = td.textContent || td.innerText;
-                  isseueType = td2.textContent || td2.innerText;
-                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
-                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (severity == "ALL" || severity == txtValue) && (issueTypeSelected == "ALL" || issueTypeSelected == isseueType)) {
-                    tr[i].style.display = "";
-                  } else {
-                    tr[i].style.display = "none";
-                  }
-                }
-              }
-          tablinks = document.getElementsByClassName("issueSeverity");
-          for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-          }
-          evt.currentTarget.className += " active";
         }
     </script>
 
