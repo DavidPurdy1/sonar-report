@@ -27,6 +27,7 @@ const buildCommand = (command = new Command()) => command
   .option('--sonartoken <token>', 'auth token')
   .option('--sonarorganization <organization>', 'name of the sonarcloud.io organization')
   .option('--since-leak-period', 'flag to indicate if the reporting should be done since the last sonarqube leak period (delta analysis).', false)
+  .option('--include-leak-period', 'flag to indicate if the reporting should be done for both overall code as well since the last sonarqube leak period (delta analysis).', false)
   .option('--allbugs', 'flag to indicate if the report should contain all bugs, not only vulnerabilities.', false)
   .option('--fix-missing-rule', 'Extract rules without filtering on type (even if allbugs=false). Not useful if allbugs=true.', false)
   .option('--no-security-hotspot', 'Set this flag for old versions of sonarQube without security hotspots (<7.3).', true)
@@ -116,6 +117,7 @@ const generateReport = async options => {
     pullRequest: options.pullrequest,
     branch: options.branch,
     sinceLeakPeriod: options.sinceLeakPeriod,
+    includeLeakPeriod: options.includeLeakPeriod,
     previousPeriod: "",
     allBugs: options.allbugs,
     fixMissingRule: options.fixMissingRule,
@@ -347,7 +349,7 @@ const generateReport = async options => {
     do {
       try {
         const response = await got(
-          `${sonarBaseURL}/api/issues/search?componentKeys=${sonarComponent}&ps=${pageSize}&p=${page}&statuses=${ISSUE_STATUSES}&resolutions=&s=STATUS&asc=no${leakPeriodFilter}${filterIssue}${withOrganization}`,
+          `${sonarBaseURL}/api/issues/search?componentKeys=${sonarComponent}&ps=${pageSize}&p=${page}&statuses=${ISSUE_STATUSES}&resolutions=&s=STATUS&asc=no${data.includeLeakPeriod ? "" : leakPeriodFilter}${filterIssue}${withOrganization}`,
           {
             agent,
             headers,
@@ -394,7 +396,7 @@ const generateReport = async options => {
       do {
         try {
           const response = await got(
-            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&status=${HOTSPOT_STATUSES}`,
+            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${data.includeLeakPeriod ? "" : leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&status=${HOTSPOT_STATUSES}`,
             {
               agent,
               headers,
