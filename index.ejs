@@ -120,18 +120,18 @@
 		<%if (issues.length > 0) { %>
 		<h2>Detail of the Detected <%= vulnerabilityPluralPhrase %></h2>
         <div class="tab">
-          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
-          <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
-          <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
-          <button class="issueType" onclick="filterIssueType(event, 'BUG')">BUG</button>
-          <button class="issueType" onclick="filterIssueType(event, 'SECURITY_HOTSPOT')">SECURITY_HOTSPOT</button>
-        </div>
-        <div class="tab">
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'ALL')">ALL</button>
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'BLOCKER')">BLOCKER</button>
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'CRITICAL')">CRITICAL</button>
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MAJOR')">MAJOR</button>
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MINOR')">MINOR</button>
+        </div>
+        <div class="tab" id="issueTypeTab">
+          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
+          <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
+          <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
+          <button class="issueType" onclick="filterIssueType(event, 'BUG')">BUG</button>
+          <button class="issueType" onclick="filterIssueType(event, 'SECURITY_HOTSPOT')">SECURITY_HOTSPOT</button>
         </div>
         <table id="issuesTable">
 			<thead>

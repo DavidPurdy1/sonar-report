@@ -122,6 +122,10 @@ blockquote {
   background-color: #ccc;
 }
 
+#issueTypeTab{
+    float:right;
+}
+
 table {
     border-collapse: collapse;
     width: 100%
