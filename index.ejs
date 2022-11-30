@@ -395,17 +395,23 @@
     </script>
 
 	<script>
-        preparePioChart(document.getElementById("vulnerabilitiesPieChart"), <%= summary %>)
-        preparePioChart(document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart"), <%= summarySinceLeakPeriod %>)
-        function preparePioChart(canvas, datasource) {
-		var ctx = canvas.getContext("2d");
+        var data = [
+            <%= summary.blocker %>,
+            <%= summary.critical %>,
+            <%= summary.major %>,
+            <%= summary.minor %>
+        ];
+        preparePieChart(document.getElementById("vulnerabilitiesPieChart"), data);
 
-		var data = [
-			datasource.blocker,
-			datasource.critical,
-			datasource.major,
-			datasource.minor
-		];
+        data = [
+            <%= summarySinceLeakPeriod.blocker %>,
+            <%= summarySinceLeakPeriod.critical %>,
+            <%= summarySinceLeakPeriod.major %>,
+            <%= summarySinceLeakPeriod.minor %>
+        ];
+        preparePieChart(document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart"), data);
+        function preparePieChart(canvas, data) {
+		var ctx = canvas.getContext("2d");
 		var total = data.reduce(function (sum, n) {
 			return sum + n;
 		})
