@@ -117,6 +117,7 @@
 				</tr>
 			</tbody>
 		</table>
+        <%if (includeLeakPeriod) { %>
         <table id="summarySinceLeakPeriod">
             <thead>
                 <tr>
@@ -148,9 +149,13 @@
                 </tr>
             </tbody>
         </table>
+        <% } %>
 
 		<%if (issues.length > 0) { %>
 		<canvas id="vulnerabilitiesPieChart" width="200" height="200"></canvas>
+        <%if (includeLeakPeriod) { %>
+        <canvas id="vulnerabilitiesSinceLeakPeriodPieChart" width="200" height="200"></canvas>
+        <% } %>
 		<% } %>
 	</div>
 
@@ -253,14 +258,20 @@
           newCodeElement = document.getElementsByClassName("newCode")[0];
           summaryTable = document.getElementById("summary");
           summarySinceLeakPeriodTable = document.getElementById("summarySinceLeakPeriod");
+          vulnerabilitiesPieChart = document.getElementById("vulnerabilitiesPieChart");
+          vulnerabilitiesSinceLeakPeriodPieChart = document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart");
           if (codeTypeSelected == "NEW"){
               newCodeElement.style.display = "";
               summaryTable.style.display = "none";
               summarySinceLeakPeriodTable.style.display = "";
+              vulnerabilitiesPieChart.style.display = "none";
+              vulnerabilitiesSinceLeakPeriodPieChart.style.display = "";
           } else {
               newCodeElement.style.display = "none";
               summaryTable.style.display = "";
               summarySinceLeakPeriodTable.style.display = "none";
+              vulnerabilitiesPieChart.style.display = "";
+              vulnerabilitiesSinceLeakPeriodPieChart.style.display = "none";
           }
 
           filterTable();
@@ -384,14 +395,16 @@
     </script>
 
 	<script>
-		var canvas = document.getElementById("vulnerabilitiesPieChart");
+        preparePioChart(document.getElementById("vulnerabilitiesPieChart"), <%= summary %>)
+        preparePioChart(document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart"), <%= summarySinceLeakPeriod %>)
+        function preparePioChart(canvas, datasource) {
 		var ctx = canvas.getContext("2d");
 
 		var data = [
-			<%= summary.blocker %> ,
-			<%= summary.critical %> ,
-			<%= summary.major %> ,
-			<%= summary.minor %>
+			datasource.blocker,
+			datasource.critical,
+			datasource.major,
+			datasource.minor
 		];
 		var total = data.reduce(function (sum, n) {
 			return sum + n;
@@ -408,6 +421,7 @@
 			ctx.fill();
 			lastend += Math.PI * 2 * (data[i] / total);
 		}
+        }
 	</script>
 
 	<% } %>
