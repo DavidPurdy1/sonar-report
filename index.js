@@ -405,7 +405,7 @@ const generateReport = async options => {
               message: issue.message,
               key: issue.key,
               type: issue.type,
-              sinceLeakPeriod: data.includeLeakPeriod ? data.issueKeysSinceLeakPeriod.contain(issue.key) : false
+              sinceLeakPeriod: data.includeLeakPeriod ? data.issueKeysSinceLeakPeriod.includes(issue.key) : false
             };
           })
         );
@@ -490,7 +490,7 @@ const generateReport = async options => {
             message: hotspot.message,
             key: hotspot.key,
             type: "SECURITY_HOTSPOT",
-            sinceLeakPeriod: data.includeLeakPeriod ? data.hotspotKeysSinceLeakPeriod.contain(hotspot.key) : false
+            sinceLeakPeriod: data.includeLeakPeriod ? data.hotspotKeysSinceLeakPeriod.includes(hotspot.key) : false
           });
         } catch (error) {
           logError("getting hotspots details", error);

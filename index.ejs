@@ -26,8 +26,8 @@
 
         <h1>SonarQube <%= vulnerabilityPhrase %> Report
             <div class="tab" style="float:right;border: 1px solid #ccc;">
-                <button class="codeType" id="newCode" onclick="filterCode(event, 'NEW')">New Code</button>
-                <button class="codeType" id="overallCode" onclick="filterCode(event, 'ALL')">Overall Code</button>
+                <button class="codeType" id="newCode" onclick="filterCode('NEW')">New Code</button>
+                <button class="codeType" id="overallCode" onclick="filterCode('ALL')">Overall Code</button>
             </div>
         </h1>
 
@@ -148,6 +148,7 @@
 					<th>Description</th>
 					<th>Message</th>
 					<th class="hidden">Key</th>
+                    <th class="hidden">SinceLeakPeriod</th>
                     <th>Type</th>
 					<th>Status</th>
 				</tr>
@@ -162,6 +163,7 @@
 					<td><%= issues[i].description %></td>
 					<td><%= issues[i].message %></td>
 					<td class="hidden"><%= issues[i].key %></td>
+                    <td class="hidden"><%= issues[i].sinceLeakPeriod ? "SinceLeakPeriod" : "" %></td>
                     <td><%= issues[i].type %></td>
                     <td><%- issues[i].link(issues[i].status) %></td>
 				</tr>
@@ -202,9 +204,9 @@
     <script>
         document.getElementsByClassName("issueType")[0].className += " active";
         document.getElementsByClassName("issueSeverity")[0].className += " active";
-        document.getElementsByClassName("codeType")[0].className += " active";
-
-        function filterCode(evt, type) {
+        filterCode("NEW")
+        
+        function filterCode(type) {
             newCodeElement = document.getElementsByClassName("newCode")[0];
             if (type == "NEW"){
                 newCodeElement.style.display = "";
@@ -212,14 +214,57 @@
                 newCodeElement.style.display = "none";
             }
 
+            issueSeveritySelected = selectedIssueSeverity();
+            issueTypeSelected = selectedIssueType();
+            var table, tr, td, i, txtValue;
+              table = document.getElementById("issuesTable");
+              tr = table.getElementsByTagName("tr");
+              for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[8];
+                td2 = tr[i].getElementsByTagName("td")[1];
+                td3 = tr[i].getElementsByTagName("td")[7];
+                if (td) {
+                  issueType = td.textContent || td.innerText;
+                  isseueSeverity = td2.textContent || td2.innerText;
+                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
+                  if ((type != "NEW" || isseueSinceLeakPeriod != "") && (issueTypeSelected == "ALL" || issueTypeSelected == issueType) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
+                    tr[i].style.display = "";
+                  } else {
+                    tr[i].style.display = "none";
+                  }
+                }
+              }
+                    
           tablinks = document.getElementsByClassName("codeType");
-          for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          if (type == "NEW"){
+              tablinks[0].className += " active";
+              tablinks[1].className = tablinks[1].className.replace(" active", "");
+          } else {
+              tablinks[0].className = tablinks[0].className.replace(" active", "");
+              tablinks[1].className += " active";
           }
-          evt.currentTarget.className += " active";
         }
 
-        function filterIssueType(evt, type) {
+        function selectedCodeType() {
+            tablinks = document.getElementsByClassName("codeType");
+            codeTypeSelected = "ALL";
+            for (i = 0; i < tablinks.length; i++) {
+              if (tablinks[i].className.indexOf(" active") > -1) {
+                  switch(i) {
+                      case 0:
+                        issueSeveritySelected = "NEW";
+                        break;
+                      case 1:
+                        issueSeveritySelected = "ALL";
+                        break;
+                  }
+                  break;
+              }
+            }
+            return codeTypeSelected
+        }
+
+        function selectedIssueSeverity() {
             tablinks = document.getElementsByClassName("issueSeverity");
             issueSeveritySelected = "ALL";
             for (i = 0; i < tablinks.length; i++) {
@@ -244,17 +289,52 @@
                   break;
               }
             }
+            return issueSeveritySelected
+        }
 
+        function selectedIssueType() {
+              tablinks = document.getElementsByClassName("issueType");
+              issueTypeSelected = "ALL";
+              for (i = 0; i < tablinks.length; i++) {
+                if (tablinks[i].className.indexOf(" active") > -1) {
+                    switch(i) {
+                        case 0:
+                          issueTypeSelected = "ALL";
+                          break;
+                        case 1:
+                          issueTypeSelected = "VULNERABILITY";
+                          break;
+                        case 2:
+                          issueTypeSelected = "CODE_SMELL";
+                          break;
+                        case 3:
+                          issueTypeSelected = "BUG";
+                          break;
+                        case 4:
+                          issueTypeSelected = "SECURITY_HOTSPOT";
+                          break;
+                    }
+                    break;
+                }
+              }
+              return issueTypeSelected
+        }
+
+        function filterIssueType(evt, type) {
+            issueSeveritySelected = selectedIssueSeverity();
+            codeTypeSelected = selectedCodeType();
             var table, tr, td, i, txtValue;
               table = document.getElementById("issuesTable");
               tr = table.getElementsByTagName("tr");
               for (i = 0; i < tr.length; i++) {
-                td = tr[i].getElementsByTagName("td")[7];
+                td = tr[i].getElementsByTagName("td")[8];
                 td2 = tr[i].getElementsByTagName("td")[1];
+                td3 = tr[i].getElementsByTagName("td")[7];
                 if (td) {
                   txtValue = td.textContent || td.innerText;
                   isseueSeverity = td2.textContent || td2.innerText;
-                  if ((type == "ALL" || txtValue == type) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
+                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
+                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (type == "ALL" || type == txtValue) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
                     tr[i].style.display = "";
                   } else {
                     tr[i].style.display = "none";
@@ -268,41 +348,20 @@
           evt.currentTarget.className += " active";
         }
         function filterIssueSeverity(evt, severity) {
-            tablinks = document.getElementsByClassName("issueType");
-            issueTypeSelected = "ALL";
-            for (i = 0; i < tablinks.length; i++) {
-              if (tablinks[i].className.indexOf(" active") > -1) {
-                  switch(i) {
-                      case 0:
-                        issueTypeSelected = "ALL";
-                        break;
-                      case 1:
-                        issueTypeSelected = "VULNERABILITY";
-                        break;
-                      case 2:
-                        issueTypeSelected = "CODE_SMELL";
-                        break;
-                      case 3:
-                        issueTypeSelected = "BUG";
-                        break;
-                      case 4:
-                        issueTypeSelected = "SECURITY_HOTSPOT";
-                        break;
-                  }
-                  break;
-              }
-            }
-
+            issueTypeSelected = selectedIssueType();
+            codeTypeSelected = selectedCodeType();
             var table, tr, td, i, txtValue;
               table = document.getElementById("issuesTable");
               tr = table.getElementsByTagName("tr");
               for (i = 0; i < tr.length; i++) {
                 td = tr[i].getElementsByTagName("td")[1];
-                td2 = tr[i].getElementsByTagName("td")[7];
+                td2 = tr[i].getElementsByTagName("td")[8];
+                td3 = tr[i].getElementsByTagName("td")[7];
                 if (td) {
                   txtValue = td.textContent || td.innerText;
                   isseueType = td2.textContent || td2.innerText;
-                  if ((severity == "ALL" || txtValue == severity) && (issueTypeSelected == "ALL" || issueTypeSelected == isseueType)) {
+                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
+                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (severity == "ALL" || severity == txtValue) && (issueTypeSelected == "ALL" || issueTypeSelected == isseueType)) {
                     tr[i].style.display = "";
                   } else {
                     tr[i].style.display = "none";
