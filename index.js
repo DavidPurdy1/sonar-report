@@ -503,13 +503,23 @@ const generateReport = async options => {
       return severity.get(b.severity) - severity.get(a.severity);
     });
 
+    let blocker = data.issues.filter((issue) => issue.severity === "BLOCKER")
+    let critical = data.issues.filter((issue) => issue.severity === "CRITICAL")
+    let major = data.issues.filter((issue) => issue.severity === "MAJOR")
+    let minor = data.issues.filter((issue) => issue.severity === "MINOR")
+
     data.summary = {
-      blocker: data.issues.filter((issue) => issue.severity === "BLOCKER")
-        .length,
-      critical: data.issues.filter((issue) => issue.severity === "CRITICAL")
-        .length,
-      major: data.issues.filter((issue) => issue.severity === "MAJOR").length,
-      minor: data.issues.filter((issue) => issue.severity === "MINOR").length,
+      blocker: blocker.length,
+      critical: critical.length,
+      major: major.length,
+      minor: minor.length,
+    };
+
+    data.summarySinceLeakPeriod = {
+      blocker: blocker.filter((issue) => issue.sinceLeakPeriod === true).length,
+      critical: critical.filter((issue) => issue.sinceLeakPeriod === true).length,
+      major: major.filter((issue) => issue.sinceLeakPeriod === true).length,
+      minor: minor.filter((issue) => issue.sinceLeakPeriod === true).length,
     };
   }
 

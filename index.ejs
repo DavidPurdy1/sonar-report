@@ -86,7 +86,7 @@
         <% } %>
 
 		<h2>Summary of the Detected <%= vulnerabilityPluralPhrase %></h2>
-		<table>
+		<table id="summary">
 			<thead>
 				<tr>
 					<th></th>
@@ -117,6 +117,37 @@
 				</tr>
 			</tbody>
 		</table>
+        <table id="summarySinceLeakPeriod">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Severity</th>
+                    <th>Number of Issues</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="sevBLOCKER"></td>
+                    <td>BLOCKER</td>
+                    <td><%= summarySinceLeakPeriod.blocker %></td>
+                </tr>
+                <tr>
+                    <td class="sevCRITICAL"></td>
+                    <td>CRITICAL</td>
+                    <td><%= summarySinceLeakPeriod.critical %></td>
+                </tr>
+                <tr>
+                    <td class="sevMAJOR"></td>
+                    <td>MAJOR</td>
+                    <td><%= summarySinceLeakPeriod.major %></td>
+                </tr>
+                <tr>
+                    <td class="sevMINOR"></td>
+                    <td>MINOR</td>
+                    <td><%= summarySinceLeakPeriod.minor %></td>
+                </tr>
+            </tbody>
+        </table>
 
 		<%if (issues.length > 0) { %>
 		<canvas id="vulnerabilitiesPieChart" width="200" height="200"></canvas>
@@ -209,13 +240,6 @@
         filterCode("NEW")
         
         function filterCode(type) {
-            newCodeElement = document.getElementsByClassName("newCode")[0];
-            if (type == "NEW"){
-                newCodeElement.style.display = "";
-            } else {
-                newCodeElement.style.display = "none";
-            }
-                    
           tablinks = document.getElementsByClassName("codeType");
           if (type == "NEW"){
               tablinks[0].className += " active";
@@ -224,6 +248,21 @@
               tablinks[0].className = tablinks[0].className.replace(" active", "");
               tablinks[1].className += " active";
           }
+
+          codeTypeSelected = selectedCodeType();
+          newCodeElement = document.getElementsByClassName("newCode")[0];
+          summaryTable = document.getElementById("summary");
+          summarySinceLeakPeriodTable = document.getElementById("summarySinceLeakPeriod");
+          if (codeTypeSelected == "NEW"){
+              newCodeElement.style.display = "";
+              summaryTable.style.display = "none";
+              summarySinceLeakPeriodTable.style.display = "";
+          } else {
+              newCodeElement.style.display = "none";
+              summaryTable.style.display = "";
+              summarySinceLeakPeriodTable.style.display = "none";
+          }
+
           filterTable();
         }
 
