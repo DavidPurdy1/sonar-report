@@ -25,10 +25,12 @@
 		-->
 
         <h1>SonarQube <%= vulnerabilityPhrase %> Report
+            <%if (includeLeakPeriod) { %>
             <div class="tab" style="float:right;border: 1px solid #ccc;">
                 <button class="codeType" id="newCode" onclick="filterCode('NEW')">New Code</button>
                 <button class="codeType" id="overallCode" onclick="filterCode('ALL')">Overall Code</button>
             </div>
+            <% } %>
         </h1>
 
 		<dl>
