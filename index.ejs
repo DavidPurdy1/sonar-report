@@ -24,7 +24,12 @@
 		</p>
 		-->
 
-		<h1>SonarQube <%= vulnerabilityPhrase %> Report</h1>
+        <h1>SonarQube <%= vulnerabilityPhrase %> Report
+            <div class="tab" style="float:right;border: 1px solid #ccc;">
+                <button class="codeType" id="newCode" onclick="filterCode(event, 'NEW')">New Code</button>
+                <button class="codeType" id="overallCode" onclick="filterCode(event, 'ALL')">Overall Code</button>
+            </div>
+        </h1>
 
 		<dl>
 			<dt>Report Generated On</dt>
@@ -126,7 +131,7 @@
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MAJOR')">MAJOR</button>
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MINOR')">MINOR</button>
         </div>
-        <div class="tab" id="issueTypeTab">
+        <div class="tab" style="float:right;">
           <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
           <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
           <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
@@ -197,6 +202,15 @@
     <script>
         document.getElementsByClassName("issueType")[0].className += " active";
         document.getElementsByClassName("issueSeverity")[0].className += " active";
+        document.getElementsByClassName("codeType")[0].className += " active";
+
+        function filterCode(evt, type) {
+          tablinks = document.getElementsByClassName("codeType");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+        }
 
         function filterIssueType(evt, type) {
             tablinks = document.getElementsByClassName("issueSeverity");
