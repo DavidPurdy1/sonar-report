@@ -170,11 +170,11 @@
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MINOR')">MINOR</button>
         </div>
         <div class="tab" style="float:right;">
-          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
           <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
           <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
           <button class="issueType" onclick="filterIssueType(event, 'BUG')">BUG</button>
           <button class="issueType" onclick="filterIssueType(event, 'SECURITY_HOTSPOT')">SECURITY_HOTSPOT</button>
+          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
         </div>
         <table id="issuesTable">
 			<thead>
@@ -240,7 +240,7 @@
 
 	<%if (issues.length > 0) { %>
     <script>
-        document.getElementsByClassName("issueType")[0].className += " active";
+        document.getElementsByClassName("issueType")[4].className += " active";
         document.getElementsByClassName("issueSeverity")[0].className += " active";
         filterCode("NEW")
         
@@ -331,19 +331,19 @@
                 if (tablinks[i].className.indexOf(" active") > -1) {
                     switch(i) {
                         case 0:
-                          issueTypeSelected = "ALL";
-                          break;
-                        case 1:
                           issueTypeSelected = "VULNERABILITY";
                           break;
-                        case 2:
+                        case 1:
                           issueTypeSelected = "CODE_SMELL";
                           break;
-                        case 3:
+                        case 2:
                           issueTypeSelected = "BUG";
                           break;
-                        case 4:
+                        case 3:
                           issueTypeSelected = "SECURITY_HOTSPOT";
+                          break;
+                        case 4:
+                          issueTypeSelected = "ALL";
                           break;
                     }
                     break;
