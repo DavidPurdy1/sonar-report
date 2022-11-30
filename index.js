@@ -27,6 +27,7 @@ const buildCommand = (command = new Command()) => command
   .option('--sonartoken <token>', 'auth token')
   .option('--sonarorganization <organization>', 'name of the sonarcloud.io organization')
   .option('--since-leak-period', 'flag to indicate if the reporting should be done since the last sonarqube leak period (delta analysis).', false)
+  .option('--include-leak-period', 'flag to indicate if the reporting should be done for both overall code as well since the last sonarqube leak period (delta analysis).', false)
   .option('--allbugs', 'flag to indicate if the report should contain all bugs, not only vulnerabilities.', false)
   .option('--fix-missing-rule', 'Extract rules without filtering on type (even if allbugs=false). Not useful if allbugs=true.', false)
   .option('--no-security-hotspot', 'Set this flag for old versions of sonarQube without security hotspots (<7.3).', true)
@@ -116,6 +117,7 @@ const generateReport = async options => {
     pullRequest: options.pullrequest,
     branch: options.branch,
     sinceLeakPeriod: options.sinceLeakPeriod,
+    includeLeakPeriod: options.includeLeakPeriod,
     previousPeriod: "",
     allBugs: options.allbugs,
     fixMissingRule: options.fixMissingRule,
@@ -130,8 +132,11 @@ const generateReport = async options => {
     rules: new Map(),
     issues: [],
     hotspotKeys: [],
+    issueKeysSinceLeakPeriod: [],
+    hotspotKeysSinceLeakPeriod: [],
   };
 
+  data.sinceLeakPeriod = data.includeLeakPeriod ? true : data.sinceLeakPeriod
   const leakPeriodFilter = data.sinceLeakPeriod ? "&sinceLeakPeriod=true" : "";
   data.deltaAnalysis = data.sinceLeakPeriod ? "Yes" : "No";
   const sonarBaseURL = data.sonarBaseURL;
@@ -332,7 +337,7 @@ const generateReport = async options => {
     const pageSize = 500;
     const maxResults = 10000;
     const maxPage = maxResults / pageSize;
-    let page = 1;
+    let page;
     let nbResults;
     /** Get all statuses except "REVIEWED".
      * Actions in sonarQube vs status in security hotspot (sonar >= 7):
@@ -344,10 +349,33 @@ const generateReport = async options => {
      * - set as in review
      *    "status": "IN_REVIEW"
      */
+    if (data.includeLeakPeriod) {
+        page = 1;
+        do {
+          try {
+            const response = await got(
+              `${sonarBaseURL}/api/issues/search?componentKeys=${sonarComponent}&ps=${pageSize}&p=${page}&statuses=${ISSUE_STATUSES}&resolutions=&s=STATUS&asc=no${leakPeriodFilter}${filterIssue}${withOrganization}`,
+              {
+                agent,
+                headers,
+              }
+            );
+            page++;
+            const json = JSON.parse(response.body);
+            nbResults = json.issues.length;
+            data.issueKeysSinceLeakPeriod.push(...json.issues.map((issue) => issue.key));
+          } catch (error) {
+            logError("getting issues", error);
+            return null;
+          }
+        } while (nbResults === pageSize && page <= maxPage);
+    }
+
+    page = 1;
     do {
       try {
         const response = await got(
-          `${sonarBaseURL}/api/issues/search?componentKeys=${sonarComponent}&ps=${pageSize}&p=${page}&statuses=${ISSUE_STATUSES}&resolutions=&s=STATUS&asc=no${leakPeriodFilter}${filterIssue}${withOrganization}`,
+          `${sonarBaseURL}/api/issues/search?componentKeys=${sonarComponent}&ps=${pageSize}&p=${page}&statuses=${ISSUE_STATUSES}&resolutions=&s=STATUS&asc=no${data.includeLeakPeriod ? "" : leakPeriodFilter}${filterIssue}${withOrganization}`,
           {
             agent,
             headers,
@@ -376,6 +404,8 @@ const generateReport = async options => {
               description: message,
               message: issue.message,
               key: issue.key,
+              type: issue.type,
+              sinceLeakPeriod: data.includeLeakPeriod ? data.issueKeysSinceLeakPeriod.includes(issue.key) : false
             };
           })
         );
@@ -385,15 +415,13 @@ const generateReport = async options => {
       }
     } while (nbResults === pageSize && page <= maxPage);
 
-    let hSeverity = "";
-
     if (!data.noSecurityHotspot && semver.satisfies(version, ">=8.0")) {
       // 1) Listing hotspots with hotspots/search
       page = 1;
       do {
         try {
           const response = await got(
-            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&statuses=${HOTSPOT_STATUSES}`,
+            `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${data.includeLeakPeriod ? "" : leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&status=${HOTSPOT_STATUSES}`,
             {
               agent,
               headers,
@@ -409,6 +437,28 @@ const generateReport = async options => {
         }
       } while (nbResults === pageSize && page <= maxPage);
 
+      if (data.includeLeakPeriod) {
+        page = 1;
+        do {
+          try {
+            const response = await got(
+              `${sonarBaseURL}/api/hotspots/search?projectKey=${sonarComponent}${filterHotspots}${leakPeriodFilter}${withOrganization}&ps=${pageSize}&p=${page}&status=${HOTSPOT_STATUSES}`,
+              {
+                agent,
+                headers,
+              }
+            );
+            page++;
+            const json = JSON.parse(response.body);
+            nbResults = json.hotspots.length;
+            data.hotspotKeysSinceLeakPeriod.push(...json.hotspots.map((hotspot) => hotspot.key));
+          } catch (error) {
+            logError("getting hotspots list", error);
+            return null;
+          }
+        } while (nbResults === pageSize && page <= maxPage);
+      }
+
       // 2) Getting hotspots details with hotspots/show
       for (let hotspotKey of data.hotspotKeys) {
         try {
@@ -420,7 +470,7 @@ const generateReport = async options => {
             }
           );
           const hotspot = JSON.parse(response.body);
-          hSeverity = hotspotSeverities[hotspot.rule.vulnerabilityProbability];
+          let hSeverity = hotspotSeverities[hotspot.rule.vulnerabilityProbability];
           if (hSeverity === undefined) {
             hSeverity = "MAJOR";
             console.error(
@@ -439,6 +489,8 @@ const generateReport = async options => {
             description: hotspot.rule ? hotspot.rule.name : "/",
             message: hotspot.message,
             key: hotspot.key,
+            type: "SECURITY_HOTSPOT",
+            sinceLeakPeriod: data.includeLeakPeriod ? data.hotspotKeysSinceLeakPeriod.includes(hotspot.key) : false
           });
         } catch (error) {
           logError("getting hotspots details", error);
@@ -451,13 +503,23 @@ const generateReport = async options => {
       return severity.get(b.severity) - severity.get(a.severity);
     });
 
+    let blocker = data.issues.filter((issue) => issue.severity === "BLOCKER")
+    let critical = data.issues.filter((issue) => issue.severity === "CRITICAL")
+    let major = data.issues.filter((issue) => issue.severity === "MAJOR")
+    let minor = data.issues.filter((issue) => issue.severity === "MINOR")
+
     data.summary = {
-      blocker: data.issues.filter((issue) => issue.severity === "BLOCKER")
-        .length,
-      critical: data.issues.filter((issue) => issue.severity === "CRITICAL")
-        .length,
-      major: data.issues.filter((issue) => issue.severity === "MAJOR").length,
-      minor: data.issues.filter((issue) => issue.severity === "MINOR").length,
+      blocker: blocker.length,
+      critical: critical.length,
+      major: major.length,
+      minor: minor.length,
+    };
+
+    data.summarySinceLeakPeriod = {
+      blocker: blocker.filter((issue) => issue.sinceLeakPeriod === true).length,
+      critical: critical.filter((issue) => issue.sinceLeakPeriod === true).length,
+      major: major.filter((issue) => issue.sinceLeakPeriod === true).length,
+      minor: minor.filter((issue) => issue.sinceLeakPeriod === true).length,
     };
   }
 

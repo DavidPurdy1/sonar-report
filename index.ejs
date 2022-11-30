@@ -24,7 +24,14 @@
 		</p>
 		-->
 
-		<h1>SonarQube <%= vulnerabilityPhrase %> Report</h1>
+        <h1>SonarQube <%= vulnerabilityPhrase %> Report
+            <%if (includeLeakPeriod) { %>
+            <div class="tab" style="float:right;border: 1px solid #ccc;">
+                <button class="codeType" id="newCode" onclick="filterCode('NEW')">New Code</button>
+                <button class="codeType" id="overallCode" onclick="filterCode('ALL')">Overall Code</button>
+            </div>
+            <% } %>
+        </h1>
 
 		<dl>
 			<dt>Report Generated On</dt>
@@ -42,15 +49,15 @@
 			<dt>Branch</dt>
 			<dd><%= branch %></dd>
 
+            <div class="newCode">
 			<dt>Delta analysis</dt>
 			<dd><%= deltaAnalysis %></dd>
 
 			<%if (previousPeriod) { %>
-
 			<dt>Reference period </dt>
 			<dd><%= previousPeriod %></dd>
-
 			<% } %>
+            </div>
 		</dl>
 
         <%if (qualityGateStatus) { %>
@@ -79,7 +86,7 @@
         <% } %>
 
 		<h2>Summary of the Detected <%= vulnerabilityPluralPhrase %></h2>
-		<table>
+		<table id="summary">
 			<thead>
 				<tr>
 					<th></th>
@@ -110,16 +117,66 @@
 				</tr>
 			</tbody>
 		</table>
+        <%if (includeLeakPeriod) { %>
+        <table id="summarySinceLeakPeriod">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Severity</th>
+                    <th>Number of Issues</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="sevBLOCKER"></td>
+                    <td>BLOCKER</td>
+                    <td><%= summarySinceLeakPeriod.blocker %></td>
+                </tr>
+                <tr>
+                    <td class="sevCRITICAL"></td>
+                    <td>CRITICAL</td>
+                    <td><%= summarySinceLeakPeriod.critical %></td>
+                </tr>
+                <tr>
+                    <td class="sevMAJOR"></td>
+                    <td>MAJOR</td>
+                    <td><%= summarySinceLeakPeriod.major %></td>
+                </tr>
+                <tr>
+                    <td class="sevMINOR"></td>
+                    <td>MINOR</td>
+                    <td><%= summarySinceLeakPeriod.minor %></td>
+                </tr>
+            </tbody>
+        </table>
+        <% } %>
 
 		<%if (issues.length > 0) { %>
 		<canvas id="vulnerabilitiesPieChart" width="200" height="200"></canvas>
+        <%if (includeLeakPeriod) { %>
+        <canvas id="vulnerabilitiesSinceLeakPeriodPieChart" width="200" height="200"></canvas>
+        <% } %>
 		<% } %>
 	</div>
 
 	<div class=detail>
 		<%if (issues.length > 0) { %>
 		<h2>Detail of the Detected <%= vulnerabilityPluralPhrase %></h2>
-		<table>
+        <div class="tab">
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'ALL')">ALL</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'BLOCKER')">BLOCKER</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'CRITICAL')">CRITICAL</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MAJOR')">MAJOR</button>
+          <button class="issueSeverity" onclick="filterIssueSeverity(event, 'MINOR')">MINOR</button>
+        </div>
+        <div class="tab" style="float:right;">
+          <button class="issueType" onclick="filterIssueType(event, 'VULNERABILITY')">VULNERABILITY</button>
+          <button class="issueType" onclick="filterIssueType(event, 'CODE_SMELL')">CODE_SMELL</button>
+          <button class="issueType" onclick="filterIssueType(event, 'BUG')">BUG</button>
+          <button class="issueType" onclick="filterIssueType(event, 'SECURITY_HOTSPOT')">SECURITY_HOTSPOT</button>
+          <button class="issueType" onclick="filterIssueType(event, 'ALL')">ALL</button>
+        </div>
+        <table id="issuesTable">
 			<thead>
 				<tr>
 					<th>Rule</th>
@@ -129,20 +186,24 @@
 					<th>Description</th>
 					<th>Message</th>
 					<th class="hidden">Key</th>
+                    <th class="hidden">SinceLeakPeriod</th>
+                    <th>Type</th>
 					<th>Status</th>
 				</tr>
 			</thead>
 			<tbody>
 				<% for(var i = 0; i < issues.length; i++) { %>
 				<tr>
-					<td><a href="<%= sonarBaseURL %>/coding_rules#rule_key=<%= issues[i].rule %>"><%= issues[i].rule %></a></td>
+					<td><a href="<%= sonarBaseURL %>/organizations/<%= sonarOrganization %>/rules?open=<%= issues[i].rule %>&rule_key=<%= issues[i].rule %>"><%= issues[i].rule %></a></td>
 					<td><%= issues[i].severity %></td>
 					<td class="component"><%= issues[i].component %></td>
 					<td><%= issues[i].line %></td>
 					<td><%= issues[i].description %></td>
 					<td><%= issues[i].message %></td>
 					<td class="hidden"><%= issues[i].key %></td>
-					<td><%- issues[i].link(issues[i].status) %></td>
+                    <td class="hidden"><%= issues[i].sinceLeakPeriod ? "SinceLeakPeriod" : "" %></td>
+                    <td><%= issues[i].type %></td>
+                    <td><%- issues[i].link(issues[i].status) %></td>
 				</tr>
 				<% } %>
 			</tbody>
@@ -178,17 +239,179 @@
 	</div>
 
 	<%if (issues.length > 0) { %>
+    <script>
+        document.getElementsByClassName("issueType")[4].className += " active";
+        document.getElementsByClassName("issueSeverity")[0].className += " active";
+        filterCode("NEW")
+        
+        function filterCode(type) {
+          tablinks = document.getElementsByClassName("codeType");
+          if (type == "NEW"){
+              tablinks[0].className += " active";
+              tablinks[1].className = tablinks[1].className.replace(" active", "");
+          } else {
+              tablinks[0].className = tablinks[0].className.replace(" active", "");
+              tablinks[1].className += " active";
+          }
+
+          codeTypeSelected = selectedCodeType();
+          newCodeElement = document.getElementsByClassName("newCode")[0];
+          summaryTable = document.getElementById("summary");
+          summarySinceLeakPeriodTable = document.getElementById("summarySinceLeakPeriod");
+          vulnerabilitiesPieChart = document.getElementById("vulnerabilitiesPieChart");
+          vulnerabilitiesSinceLeakPeriodPieChart = document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart");
+          if (codeTypeSelected == "NEW"){
+              newCodeElement.style.display = "";
+              summaryTable.style.display = "none";
+              summarySinceLeakPeriodTable.style.display = "";
+              vulnerabilitiesPieChart.style.display = "none";
+              vulnerabilitiesSinceLeakPeriodPieChart.style.display = "";
+          } else {
+              newCodeElement.style.display = "none";
+              summaryTable.style.display = "";
+              summarySinceLeakPeriodTable.style.display = "none";
+              vulnerabilitiesPieChart.style.display = "";
+              vulnerabilitiesSinceLeakPeriodPieChart.style.display = "none";
+          }
+
+          filterTable();
+        }
+
+        function selectedCodeType() {
+            tablinks = document.getElementsByClassName("codeType");
+            codeTypeSelected = "ALL";
+            for (i = 0; i < tablinks.length; i++) {
+              if (tablinks[i].className.indexOf(" active") > -1) {
+                  switch(i) {
+                      case 0:
+                        codeTypeSelected = "NEW";
+                        break;
+                      case 1:
+                        codeTypeSelected = "ALL";
+                        break;
+                  }
+                  break;
+              }
+            }
+            return codeTypeSelected
+        }
+
+        function selectedIssueSeverity() {
+            tablinks = document.getElementsByClassName("issueSeverity");
+            issueSeveritySelected = "ALL";
+            for (i = 0; i < tablinks.length; i++) {
+              if (tablinks[i].className.indexOf(" active") > -1) {
+                  switch(i) {
+                      case 0:
+                        issueSeveritySelected = "ALL";
+                        break;
+                      case 1:
+                        issueSeveritySelected = "BLOCKER";
+                        break;
+                      case 2:
+                        issueSeveritySelected = "CRITICAL";
+                        break;
+                      case 3:
+                        issueSeveritySelected = "MAJOR";
+                        break;
+                      case 4:
+                        issueSeveritySelected = "MINOR";
+                        break;
+                  }
+                  break;
+              }
+            }
+            return issueSeveritySelected
+        }
+
+        function selectedIssueType() {
+              tablinks = document.getElementsByClassName("issueType");
+              issueTypeSelected = "ALL";
+              for (i = 0; i < tablinks.length; i++) {
+                if (tablinks[i].className.indexOf(" active") > -1) {
+                    switch(i) {
+                        case 0:
+                          issueTypeSelected = "VULNERABILITY";
+                          break;
+                        case 1:
+                          issueTypeSelected = "CODE_SMELL";
+                          break;
+                        case 2:
+                          issueTypeSelected = "BUG";
+                          break;
+                        case 3:
+                          issueTypeSelected = "SECURITY_HOTSPOT";
+                          break;
+                        case 4:
+                          issueTypeSelected = "ALL";
+                          break;
+                    }
+                    break;
+                }
+              }
+              return issueTypeSelected
+        }
+
+        function filterIssueType(evt, type) {
+          tablinks = document.getElementsByClassName("issueType");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+          filterTable();
+        }
+        function filterIssueSeverity(evt, severity) {
+          tablinks = document.getElementsByClassName("issueSeverity");
+          for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+          }
+          evt.currentTarget.className += " active";
+          filterTable();
+        }
+
+        function filterTable() {
+            issueSeveritySelected = selectedIssueSeverity();
+            issueTypeSelected = selectedIssueType();
+            codeTypeSelected = selectedCodeType();
+            var table, tr, td, i, txtValue;
+              table = document.getElementById("issuesTable");
+              tr = table.getElementsByTagName("tr");
+              for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[8];
+                td2 = tr[i].getElementsByTagName("td")[1];
+                td3 = tr[i].getElementsByTagName("td")[7];
+                if (td) {
+                  issueType = td.textContent || td.innerText;
+                  isseueSeverity = td2.textContent || td2.innerText;
+                  isseueSinceLeakPeriod = td3.textContent || td3.innerText;
+                  if ((codeTypeSelected != "NEW" || isseueSinceLeakPeriod != "") && (issueTypeSelected == "ALL" || issueTypeSelected == issueType) && (issueSeveritySelected == "ALL" || issueSeveritySelected == isseueSeverity)) {
+                    tr[i].style.display = "";
+                  } else {
+                    tr[i].style.display = "none";
+                  }
+                }
+              }
+        }
+    </script>
 
 	<script>
-		var canvas = document.getElementById("vulnerabilitiesPieChart");
-		var ctx = canvas.getContext("2d");
+        var data = [
+            <%= summary.blocker %>,
+            <%= summary.critical %>,
+            <%= summary.major %>,
+            <%= summary.minor %>
+        ];
+        preparePieChart(document.getElementById("vulnerabilitiesPieChart"), data);
 
-		var data = [
-			<%= summary.blocker %> ,
-			<%= summary.critical %> ,
-			<%= summary.major %> ,
-			<%= summary.minor %>
-		];
+        data = [
+            <%= summarySinceLeakPeriod.blocker %>,
+            <%= summarySinceLeakPeriod.critical %>,
+            <%= summarySinceLeakPeriod.major %>,
+            <%= summarySinceLeakPeriod.minor %>
+        ];
+        preparePieChart(document.getElementById("vulnerabilitiesSinceLeakPeriodPieChart"), data);
+        function preparePieChart(canvas, data) {
+		var ctx = canvas.getContext("2d");
 		var total = data.reduce(function (sum, n) {
 			return sum + n;
 		})
@@ -204,6 +427,7 @@
 			ctx.fill();
 			lastend += Math.PI * 2 * (data[i] / total);
 		}
+        }
 	</script>
 
 	<% } %>
