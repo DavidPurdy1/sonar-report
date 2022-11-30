@@ -50,12 +50,12 @@
 			<dt>Delta analysis</dt>
 			<dd><%= deltaAnalysis %></dd>
 
+            <div class="newCode">
 			<%if (previousPeriod) { %>
-
 			<dt>Reference period </dt>
 			<dd><%= previousPeriod %></dd>
-
 			<% } %>
+            </div>
 		</dl>
 
         <%if (qualityGateStatus) { %>
@@ -205,6 +205,13 @@
         document.getElementsByClassName("codeType")[0].className += " active";
 
         function filterCode(evt, type) {
+            newCodeElement = document.getElementsByClassName("newCode")[0];
+            if (type == "NEW"){
+                newCodeElement.style.display = "";
+            } else {
+                newCodeElement.style.display = "none";
+            }
+
           tablinks = document.getElementsByClassName("codeType");
           for (i = 0; i < tablinks.length; i++) {
             tablinks[i].className = tablinks[i].className.replace(" active", "");
