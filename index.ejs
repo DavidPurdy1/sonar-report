@@ -160,7 +160,6 @@
 	</div>
 
 	<div class=detail>
-		<%if (issues.length > 0) { %>
 		<h2>Detail of the Detected <%= vulnerabilityPluralPhrase %></h2>
         <div class="tab">
           <button class="issueSeverity" onclick="filterIssueSeverity(event, 'ALL')">ALL</button>
@@ -209,8 +208,6 @@
 			</tbody>
 		</table>
 
-		<% } %>
-
 		<%if (!noRulesInReport) { %>
 		<h3>Known Security Rules</h3>
 		<table class="rulestable">
@@ -238,7 +235,6 @@
 		<% } %>
 	</div>
 
-	<%if (issues.length > 0) { %>
     <script>
         document.getElementsByClassName("issueType")[4].className += " active";
         document.getElementsByClassName("issueSeverity")[0].className += " active";
@@ -394,6 +390,7 @@
         }
     </script>
 
+    <%if (issues.length > 0) { %>
 	<script>
         var data = [
             <%= summary.blocker %>,
