@@ -185,24 +185,22 @@
 					<th>Description</th>
 					<th>Message</th>
 					<th class="hidden">Key</th>
-                    <th class="hidden">SinceLeakPeriod</th>
-                    <th>Type</th>
+                    			<th>Type</th>
 					<th>Status</th>
 				</tr>
 			</thead>
 			<tbody>
 				<% for(var i = 0; i < issues.length; i++) { %>
 				<tr>
-					<td><a href="<%= sonarBaseURL %>/organizations/<%= sonarOrganization %>/rules?open=<%= issues[i].rule %>&rule_key=<%= issues[i].rule %>"><%= issues[i].rule %></a></td>
+					<td><a href="https://rules.sonarsource.com/<%= issues[i].rule.split(':')[0] %>/RSPEC-<%= issues[i].rule.split(':')[1].slice(1) %>/">Rule</a></td>
 					<td><%= issues[i].severity %></td>
 					<td class="component"><%= issues[i].component %></td>
 					<td><%= issues[i].line %></td>
 					<td><%= issues[i].description %></td>
 					<td><%= issues[i].message %></td>
 					<td class="hidden"><%= issues[i].key %></td>
-                    <td class="hidden"><%= issues[i].sinceLeakPeriod ? "SinceLeakPeriod" : "" %></td>
-                    <td><%= issues[i].type %></td>
-                    <td><%- issues[i].link(issues[i].status) %></td>
+                    			<td><%= issues[i].type %></td>
+					<td><%- issues[i].status %></td>
 				</tr>
 				<% } %>
 			</tbody>
